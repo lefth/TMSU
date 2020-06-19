@@ -1,5 +1,7 @@
 pub mod file;
 pub mod filetag;
+pub mod implication;
+pub mod meta;
 mod schema;
 pub mod tag;
 mod upgrade;
@@ -8,7 +10,7 @@ pub mod value;
 use std::iter;
 use std::path::{Path, PathBuf};
 
-use crate::entities::{TagId, ValueId};
+use crate::entities::{FileId, OptionalValueId, TagId, ValueId};
 use crate::errors::*;
 use crate::path::CanonicalPath;
 
@@ -226,5 +228,23 @@ impl rusqlite::types::FromSql for ValueId {
 impl rusqlite::ToSql for ValueId {
     fn to_sql(&self) -> rusqlite::Result<rusqlite::types::ToSqlOutput<'_>> {
         self.as_u32().to_sql()
+    }
+}
+
+impl rusqlite::ToSql for OptionalValueId {
+    fn to_sql(&self) -> rusqlite::Result<rusqlite::types::ToSqlOutput<'_>> {
+        self.as_u32().to_sql()
+    }
+}
+
+impl rusqlite::types::FromSql for FileId {
+    fn column_result(value: rusqlite::types::ValueRef<'_>) -> rusqlite::types::FromSqlResult<Self> {
+        u32::column_result(value).map(FileId)
+    }
+}
+
+impl rusqlite::ToSql for FileId {
+    fn to_sql(&self) -> rusqlite::Result<rusqlite::types::ToSqlOutput<'_>> {
+        self.0.to_sql()
     }
 }

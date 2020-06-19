@@ -1,4 +1,5 @@
 use std::fmt;
+use std::ops;
 
 use lazy_static::lazy_static;
 use regex::Regex;
@@ -26,12 +27,14 @@ impl fmt::Display for TagId {
     }
 }
 
-/// A value ID which cannot be 0.
+/// A value ID, which cannot be 0. See `OptionalValueId` for more details.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct ValueId(u32);
 
 impl ValueId {
-    /// Create a ValueId, but panics if its ID is 0
+    /// Create a ValueId, but panics if its ID is 0.
+    /// If you have an ID which is possibly 0, you probably want
+    /// to use the OptionalValueId type instead
     pub fn from_unchecked(id: u32) -> Self {
         assert!(id != 0, "A ValueId cannot be 0");
         Self(id)
@@ -48,6 +51,64 @@ impl fmt::Display for ValueId {
     }
 }
 
+/// This wrapper around Option<ValueId> is there to improve type safety.
+///
+/// In the "filetag" table, a missing value is represented with an ID of 0 instead of a NULL (not
+/// sure why, maybe to make joins easier?). If we only used a ValueId type similar to TagId, there
+/// would be way to know that the value ID is missing other than checking it in the "right" places.
+///
+/// Using an Option<ValueId> is better than having to remember to check for the magic 0 value
+/// everywhere. Unfortunately, rusqlite has a default implementation of the ToSql trait for
+/// Option<T>, which means we might be mapping it to NULL instead of 0 if we forgot to convert it
+/// explicitly. So we would end up with a similar issue, moved to the DB layer.
+///
+/// Using a wrapper around Option<ValueId> avoids this problem, since ToSql is not implemented for
+/// this new type. We can then implement the trait the way we want (this is done in storage.rs).
+///
+/// To enforce this design, a ValueId cannot hold an ID of 0. This means that a function should
+/// accept a ValueId (rather than an OptionalValueId) if and only if it handles non-zero
+/// (semantically non-null) IDs exclusively.
+///
+/// Ideally, the DB would store NULL instead of 0 and we would get rid of this workaround, but that
+/// would be a lot more work, if at all feasible.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct OptionalValueId(Option<ValueId>);
+
+impl OptionalValueId {
+    pub fn as_u32(&self) -> &u32 {
+        match self.0.as_ref() {
+            None => &0,
+            Some(ValueId(id)) => id,
+        }
+    }
+
+    pub fn from_id(id: u32) -> Self {
+        // A value ID of 0 in the DB actually means no value...
+        let opt = match id {
+            0 => None,
+            i => Some(ValueId::from_unchecked(i)),
+        };
+        Self { 0: opt }
+    }
+}
+
+impl ops::Deref for OptionalValueId {
+    type Target = Option<ValueId>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct FileId(pub u32);
+
+impl fmt::Display for FileId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
+
 pub struct Tag {
     pub id: TagId,
     pub name: String,
@@ -56,6 +117,14 @@ pub struct Tag {
 pub struct Value {
     pub id: ValueId,
     pub name: String,
+}
+
+pub struct FileTag {
+    pub file_id: FileId,
+    pub tag_id: TagId,
+    pub value_id: OptionalValueId,
+    pub explicit: bool,
+    pub implicit: bool,
 }
 
 pub struct TagFileCount {
