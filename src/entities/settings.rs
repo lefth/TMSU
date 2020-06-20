@@ -148,12 +148,10 @@ impl Settings {
         }
     }
 
-    #[allow(unused)]
     pub fn auto_create_tags(&self) -> bool {
         self.get(Self::AUTO_CREATE_TAGS).unwrap().as_bool()
     }
 
-    #[allow(unused)]
     pub fn auto_create_values(&self) -> bool {
         self.get(Self::AUTO_CREATE_VALUES).unwrap().as_bool()
     }

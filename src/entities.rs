@@ -92,6 +92,12 @@ impl OptionalValueId {
         };
         Self { 0: opt }
     }
+
+    pub fn from_opt_value(opt_value: &Option<Value>) -> Self {
+        Self {
+            0: opt_value.as_ref().map(|v| v.id),
+        }
+    }
 }
 
 impl ops::Deref for OptionalValueId {
@@ -111,11 +117,13 @@ impl fmt::Display for FileId {
     }
 }
 
+#[derive(Debug, PartialEq, Eq, Hash)]
 pub struct Tag {
     pub id: TagId,
     pub name: String,
 }
 
+#[derive(Debug, PartialEq, Eq, Hash)]
 pub struct Value {
     pub id: ValueId,
     pub name: String,
@@ -133,6 +141,20 @@ pub struct TagFileCount {
     pub id: TagId,
     pub name: String,
     pub file_count: u32,
+}
+
+#[derive(Debug, PartialEq, Eq, Hash)]
+pub struct Implication {
+    pub implying_tag: Tag,
+    pub implying_value: Option<Value>,
+    pub implied_tag: Tag,
+    pub implied_value: Option<Value>,
+}
+
+#[derive(Debug, Clone)]
+pub struct TagIdValueIdPair {
+    pub tag_id: TagId,
+    pub value_id: OptionalValueId,
 }
 
 pub fn validate_tag_name(name: &str) -> Result<()> {
