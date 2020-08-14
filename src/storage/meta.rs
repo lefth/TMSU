@@ -4,7 +4,7 @@
 //! responsibilities too much.
 //!
 //! Note that it might be cleaner to move this eventually to the "api" layer, e.g. in a "common" submodule.
-use crate::entities::{FileId, FileTag, Tag, Value};
+use crate::entities::{FileId, FileTag, OptionalValueId, Tag, TagId, Value};
 use crate::errors::*;
 use crate::storage::{self, Transaction};
 
@@ -36,4 +36,54 @@ fn delete_file_tags_by_value_id(tx: &mut Transaction, value: &Value) -> Result<(
 
 fn extract_file_ids(file_tags: &[FileTag]) -> Vec<FileId> {
     file_tags.iter().map(|ft| ft.file_id).collect()
+}
+
+pub fn add_implied_file_tags(
+    tx: &mut Transaction,
+    file_tags: Vec<FileTag>,
+) -> Result<Vec<FileTag>> {
+    let mut all_file_tags = file_tags.clone();
+
+    let mut to_process = file_tags;
+    while !to_process.is_empty() {
+        let file_tag = to_process.pop().unwrap();
+
+        let implications =
+            storage::implication::implications_for(tx, &[file_tag.to_tag_id_value_id_pair()])?;
+
+        for implication in implications.iter() {
+            let existing_file_tag_opt = find_file_tag_for_pair(
+                &mut all_file_tags,
+                &implication.implied_tag.id,
+                &implication.implied_value,
+            );
+
+            match existing_file_tag_opt {
+                Some(file_tag) => file_tag.implicit = true,
+                None => {
+                    let new_file_tag = FileTag {
+                        file_id: file_tag.file_id,
+                        tag_id: implication.implied_tag.id,
+                        value_id: OptionalValueId::from_opt_value(&implication.implied_value),
+                        explicit: false,
+                        implicit: true,
+                    };
+                    all_file_tags.push(new_file_tag.clone());
+                    to_process.push(new_file_tag);
+                }
+            };
+        }
+    }
+
+    Ok(all_file_tags)
+}
+
+fn find_file_tag_for_pair<'a>(
+    file_tags: &'a mut Vec<FileTag>,
+    tag_id: &TagId,
+    opt_value: &Option<Value>,
+) -> Option<&'a mut FileTag> {
+    file_tags.iter_mut().find(|ft| {
+        ft.tag_id == *tag_id && ft.value_id == OptionalValueId::from_opt_value(opt_value)
+    })
 }

@@ -33,6 +33,16 @@ WHERE name IN ({})",
     tx.query_vec_params(&sql, &params, parse_value)
 }
 
+pub fn value_by_id(tx: &mut Transaction, value_id: &ValueId) -> Result<Option<Value>> {
+    let sql = "
+SELECT id, name
+FROM value
+WHERE id = ?";
+
+    let params = rusqlite::params![value_id];
+    tx.query_single_params(sql, params, parse_value)
+}
+
 pub fn value_by_name(tx: &mut Transaction, name: &str) -> Result<Option<Value>> {
     // Note: when the name is an empty string, the Go implementation returns a
     // Value with an ID of 0. While it is unnecessary in most cases due to checks in upper layers,

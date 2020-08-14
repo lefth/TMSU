@@ -6,6 +6,7 @@ mod info;
 mod init;
 mod merge;
 mod rename;
+mod tags;
 mod values;
 
 use std::env;
@@ -67,6 +68,7 @@ enum SubCommands {
     Init(init::InitOptions),
     Merge(merge::MergeOptions),
     Rename(rename::RenameOptions),
+    Tags(tags::TagsOptions),
     Values(values::ValuesOptions),
 }
 
@@ -83,6 +85,7 @@ pub fn run() -> Result<()> {
         SubCommands::Init(init_opts) => init_opts.execute(),
         SubCommands::Merge(merge_opts) => merge_opts.execute(&opt.global_opts),
         SubCommands::Rename(rename_opts) => rename_opts.execute(&opt.global_opts),
+        SubCommands::Tags(tags_opts) => tags_opts.execute(&opt.global_opts),
         SubCommands::Values(values_opts) => values_opts.execute(&opt.global_opts),
     }
 }

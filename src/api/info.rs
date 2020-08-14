@@ -48,7 +48,7 @@ pub fn run_info(db_path: &Path, with_stats: bool, with_usage: bool) -> Result<In
 
     Ok(InfoOutput {
         db_path: store.db_path.clone().to_path_buf(),
-        root_path: store.root_path.clone(),
+        root_path: store.root_path.to_path_buf(),
         size: fs::metadata(db_path)?.len(),
         stats_info: stats_data,
         usage_info: usage_data,

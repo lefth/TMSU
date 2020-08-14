@@ -3,6 +3,7 @@ pub mod settings;
 use std::fmt;
 use std::ops;
 
+use chrono::{DateTime, FixedOffset};
 use lazy_static::lazy_static;
 use regex::Regex;
 
@@ -129,12 +130,32 @@ pub struct Value {
     pub name: String,
 }
 
+#[derive(Debug, Clone)]
 pub struct FileTag {
     pub file_id: FileId,
     pub tag_id: TagId,
     pub value_id: OptionalValueId,
     pub explicit: bool,
     pub implicit: bool,
+}
+
+impl FileTag {
+    pub fn to_tag_id_value_id_pair(&self) -> TagIdValueIdPair {
+        TagIdValueIdPair {
+            tag_id: self.tag_id,
+            value_id: self.value_id,
+        }
+    }
+}
+
+pub struct File {
+    pub id: FileId,
+    pub dir: String,
+    pub name: String,
+    pub fingerprint: String,
+    pub mod_time: DateTime<FixedOffset>,
+    pub size: u64,
+    pub is_dir: bool,
 }
 
 pub struct TagFileCount {
