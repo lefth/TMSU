@@ -7,6 +7,7 @@ mod init;
 mod merge;
 mod rename;
 mod tags;
+mod untagged;
 mod values;
 
 use std::env;
@@ -21,6 +22,7 @@ use structopt::clap::AppSettings::{ColoredHelp, UnifiedHelpMessage};
 use structopt::StructOpt;
 
 use crate::errors::*;
+use crate::path::AbsPath;
 
 #[derive(Debug, StructOpt)]
 #[structopt(
@@ -69,6 +71,7 @@ enum SubCommands {
     Merge(merge::MergeOptions),
     Rename(rename::RenameOptions),
     Tags(tags::TagsOptions),
+    Untagged(untagged::UntaggedOptions),
     Values(values::ValuesOptions),
 }
 
@@ -86,6 +89,7 @@ pub fn run() -> Result<()> {
         SubCommands::Merge(merge_opts) => merge_opts.execute(&opt.global_opts),
         SubCommands::Rename(rename_opts) => rename_opts.execute(&opt.global_opts),
         SubCommands::Tags(tags_opts) => tags_opts.execute(&opt.global_opts),
+        SubCommands::Untagged(untagged_opts) => untagged_opts.execute(&opt.global_opts),
         SubCommands::Values(values_opts) => values_opts.execute(&opt.global_opts),
     }
 }
@@ -163,6 +167,37 @@ pub fn print_error(result: Result<()>) {
         }
 
         process::exit(1);
+    }
+}
+
+fn getcwd() -> Result<AbsPath> {
+    Ok(AbsPath::from_unchecked(env::current_dir()?))
+}
+
+fn rel_to(path: &AbsPath, base: &AbsPath) -> PathBuf {
+    if path == base {
+        return PathBuf::from(".");
+    }
+
+    match path.strip_prefix(base) {
+        // XXX: the extra "./" prefix is copied from the Go implementation. Should we get rid of it?
+        Ok(p) => PathBuf::from(".").join(p),
+        // TODO: get rid of this special handling?
+        Err(_) => match base.parent() {
+            None => path.to_path_buf(),
+            Some(base_parent) => {
+                if path.to_path_buf() == base_parent {
+                    return PathBuf::from("..");
+                }
+
+                match path.strip_prefix(base_parent) {
+                    // XXX: the extra "../" prefix is copied from the Go implementation. Should we
+                    // get rid of it?
+                    Ok(p) => PathBuf::from("..").join(p),
+                    Err(_) => path.to_path_buf(),
+                }
+            }
+        },
     }
 }
 
@@ -403,5 +438,37 @@ mod tests {
 
         // Tag names are mandatory
         assert!(TagAndValueNames::from_str("=abc").is_err());
+    }
+
+    #[test]
+    fn test_rel_to() {
+        fn assert_rel_path(base: &str, expected: &str) {
+            let abs_base = AbsPath::from_unchecked(PathBuf::from(base));
+            let abs_dir = AbsPath::from_unchecked(PathBuf::from("/some/path"));
+
+            let actual = rel_to(&abs_dir, &abs_base).display().to_string();
+            assert_eq!(
+                actual, expected,
+                "Expected '/some/path' relative to '{}' to be '{}' but was '{}'",
+                base, expected, actual
+            );
+        }
+
+        assert_rel_path("/", "./some/path");
+        assert_rel_path("/other", "../some/path");
+        assert_rel_path("/other/", "../some/path");
+        assert_rel_path("/other/mother", "/some/path");
+        assert_rel_path("/other/mother/", "/some/path");
+        assert_rel_path("/some", "./path");
+        assert_rel_path("/some/", "./path");
+        assert_rel_path("/some/path", ".");
+        assert_rel_path("/some/path/", ".");
+        assert_rel_path("/some/path/subdir", "..");
+        assert_rel_path("/some/path/subdir/", "..");
+        assert_rel_path("/some/path/subdir/subsub", "/some/path");
+        assert_rel_path("/some/cheese", "../path");
+        assert_rel_path("/some/cheese/", "../path");
+        assert_rel_path("/some/cheese/sandwich", "/some/path");
+        assert_rel_path("/some/cheese/sandwich/", "/some/path");
     }
 }
