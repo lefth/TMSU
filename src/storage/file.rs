@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use chrono::DateTime;
+use chrono::{DateTime, FixedOffset};
 
 use crate::entities::{File, FileId, FileSort};
 use crate::errors::*;
@@ -77,6 +77,53 @@ fn parse_file(row: Row) -> Result<File> {
         size: row.get_u64(5)?,
         is_dir: row.get(6)?,
     })
+}
+
+pub fn update_file(
+    tx: &mut Transaction,
+    file_id: &FileId,
+    scoped_path: &ScopedPath,
+    fingerprint: String,
+    mod_time: DateTime<FixedOffset>,
+    size: u64,
+    is_dir: bool,
+) -> Result<()> {
+    let sql = "
+UPDATE file
+SET directory = ?, name = ?, fingerprint = ?, mod_time = ?, size = ?, is_dir = ?
+WHERE id = ?";
+
+    let (dir, name) = scoped_path.inner_as_dir_and_name();
+    let dir_string = path_to_sql(dir)?;
+    let name_string = path_to_sql(name)?;
+    // TODO: check if the conversion is correct
+    let mod_time_str = mod_time.format(TIMESTAMP_FORMAT).to_string();
+
+    let params = rusqlite::params![
+        &dir_string,
+        &name_string,
+        &fingerprint,
+        &mod_time_str,
+        size as i64,
+        is_dir,
+        file_id
+    ];
+    match tx.execute_params(sql, params) {
+        Ok(1) => Ok(()),
+        Ok(_) => Err("Expected exactly one row to be affected".into()),
+        Err(e) => Err(e),
+    }
+}
+
+pub fn delete_file(tx: &mut Transaction, file_id: &FileId) -> Result<()> {
+    let sql = "
+DELETE FROM file
+WHERE id = ?";
+
+    let params = rusqlite::params![file_id];
+    tx.execute_params(sql, params)?;
+
+    Ok(())
 }
 
 pub fn delete_untagged_files(tx: &mut Transaction, file_ids: &[FileId]) -> Result<()> {

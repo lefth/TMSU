@@ -201,11 +201,14 @@ impl ScopedPath {
             }
         }
 
-        // Append the remaining components without resolving links
-        growing.push(components.as_path());
+        // Append the remaining components (if any) without resolving links
+        let remaining = components.as_path();
+        if remaining != Path::new("") {
+            growing.push(remaining);
+        }
 
         // Get the relative part
-        let abs_path = AbsPath::from(growing, &*base);
+        let abs_path = growing.into_abs_path(&*base);
         let mut inner = match abs_path.rel_to(&*base) {
             Some(rel) => rel.to_path_buf(),
             None => abs_path.0.clone(),

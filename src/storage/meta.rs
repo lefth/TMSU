@@ -20,6 +20,11 @@ pub fn delete_value(tx: &mut Transaction, value: &Value) -> Result<()> {
     storage::value::delete_value(tx, &value.id)
 }
 
+pub fn delete_file_tags_by_file_id(tx: &mut Transaction, file_id: &FileId) -> Result<()> {
+    storage::filetag::delete_file_tags_by_file_id(tx, file_id)?;
+    storage::meta::delete_file_if_untagged(tx, &file_id)
+}
+
 fn delete_file_tags_by_tag_id(tx: &mut Transaction, tag: &Tag) -> Result<()> {
     let file_tags = storage::filetag::file_tags_by_tag_id(tx, &tag.id)?;
     storage::filetag::delete_file_tags_by_tag_id(tx, &tag.id)?;
@@ -36,6 +41,56 @@ fn delete_file_tags_by_value_id(tx: &mut Transaction, value: &Value) -> Result<(
 
 fn extract_file_ids(file_tags: &[FileTag]) -> Vec<FileId> {
     file_tags.iter().map(|ft| ft.file_id).collect()
+}
+
+pub fn delete_file_tag(
+    tx: &mut Transaction,
+    file_id: &FileId,
+    tag_id: &TagId,
+    value_id: &OptionalValueId,
+) -> Result<()> {
+    storage::filetag::delete_file_tag(tx, file_id, tag_id, value_id)?;
+    delete_file_if_untagged(tx, file_id)?;
+
+    Ok(())
+}
+
+fn delete_file_if_untagged(tx: &mut Transaction, file_id: &FileId) -> Result<()> {
+    let count = file_tag_count_by_file_id(tx, file_id, true)?;
+    if count == 0 {
+        storage::file::delete_file(tx, file_id)?;
+    }
+
+    Ok(())
+}
+
+fn file_tag_count_by_file_id(
+    tx: &mut Transaction,
+    file_id: &FileId,
+    explicit_only: bool,
+) -> Result<usize> {
+    if explicit_only {
+        // This differs slightly from the Go implementation, because we don't implement a
+        // separate query for the count
+        let file_tags = storage::filetag::file_tags_by_file_id(tx, file_id)?;
+        return Ok(file_tags.len());
+    }
+
+    let file_tags = file_tags_by_file_id(tx, file_id, false)?;
+    Ok(file_tags.len())
+}
+
+fn file_tags_by_file_id(
+    tx: &mut Transaction,
+    file_id: &FileId,
+    explicit_only: bool,
+) -> Result<Vec<FileTag>> {
+    let mut file_tags = storage::filetag::file_tags_by_file_id(tx, file_id)?;
+
+    if !explicit_only {
+        file_tags = add_implied_file_tags(tx, file_tags)?;
+    }
+    Ok(file_tags)
 }
 
 pub fn add_implied_file_tags(

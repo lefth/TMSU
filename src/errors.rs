@@ -14,6 +14,10 @@ error_chain! {
             description("Cannot open database")
             display("Cannot open database at '{}'", path.display())
         }
+        FileTagDoesNotExist(file_id: u32, tag_id: u32, value_id: u32) {
+            description("File tag does not exist")
+            display("File-tag for file #{}, tag #{} and value #{} does not exist", file_id, tag_id, value_id)
+        }
         QueryParsingError(query: String) {
             description("Cannot parse query")
             display("Cannot parse query '{}'", &query)

@@ -7,6 +7,7 @@ pub mod info;
 pub mod init;
 pub mod merge;
 pub mod rename;
+pub mod repair;
 pub mod status;
 pub mod tags;
 pub mod untagged;

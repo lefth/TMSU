@@ -7,6 +7,7 @@ mod info;
 mod init;
 mod merge;
 mod rename;
+mod repair;
 mod status;
 mod tags;
 mod untagged;
@@ -73,6 +74,7 @@ enum SubCommands {
     Init(init::InitOptions),
     Merge(merge::MergeOptions),
     Rename(rename::RenameOptions),
+    Repair(repair::RepairOptions),
     Status(status::StatusOptions),
     Tags(tags::TagsOptions),
     Untagged(untagged::UntaggedOptions),
@@ -93,6 +95,7 @@ pub fn run() -> Result<()> {
         SubCommands::Init(init_opts) => init_opts.execute(),
         SubCommands::Merge(merge_opts) => merge_opts.execute(&opt.global_opts),
         SubCommands::Rename(rename_opts) => rename_opts.execute(&opt.global_opts),
+        SubCommands::Repair(repair_opts) => repair_opts.execute(&opt.global_opts),
         SubCommands::Status(status_opts) => status_opts.execute(&opt.global_opts),
         SubCommands::Tags(tags_opts) => tags_opts.execute(&opt.global_opts),
         SubCommands::Untagged(untagged_opts) => untagged_opts.execute(&opt.global_opts),

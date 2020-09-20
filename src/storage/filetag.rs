@@ -60,6 +60,36 @@ VALUES (?1, ?2, ?3)";
     tx.execute_params(sql, params)
 }
 
+pub fn delete_file_tag(
+    tx: &mut Transaction,
+    file_id: &FileId,
+    tag_id: &TagId,
+    value_id: &OptionalValueId,
+) -> Result<usize> {
+    let sql = "
+DELETE FROM file_tag
+WHERE file_id = ?1 AND tag_id = ?2 AND value_id = ?3";
+
+    let params = rusqlite::params![file_id, tag_id, value_id];
+    match tx.execute_params(sql, params) {
+        Ok(0) => {
+            Err(ErrorKind::FileTagDoesNotExist(file_id.0, tag_id.0, *value_id.as_u32()).into())
+        }
+        Ok(1) => Ok(1),
+        Ok(_) => Err("Expected exactly one row to be affected".into()),
+        Err(e) => Err(e),
+    }
+}
+
+pub fn delete_file_tags_by_file_id(tx: &mut Transaction, file_id: &FileId) -> Result<usize> {
+    let sql = "
+DELETE FROM file_tag
+WHERE file_id = ?";
+
+    let params = rusqlite::params![file_id];
+    tx.execute_params(sql, params)
+}
+
 pub fn delete_file_tags_by_tag_id(tx: &mut Transaction, tag_id: &TagId) -> Result<usize> {
     let sql = "
 DELETE FROM file_tag

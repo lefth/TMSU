@@ -159,7 +159,6 @@ impl Settings {
         self.get(Self::AUTO_CREATE_VALUES).unwrap().as_bool()
     }
 
-    #[allow(unused)]
     pub fn directory_fingerprint_algorithm(&self) -> Result<DirectoryFingerprintAlgorithm> {
         let string = self
             .get(Self::DIRECTORY_FINGERPRINT_ALGORITHM)
@@ -168,13 +167,11 @@ impl Settings {
         DirectoryFingerprintAlgorithm::from_str(&string)
     }
 
-    #[allow(unused)]
     pub fn file_fingerprint_algorithm(&self) -> Result<FileFingerprintAlgorithm> {
         let string = self.get(Self::FILE_FINGERPRINT_ALGORITHM).unwrap().as_str();
         FileFingerprintAlgorithm::from_str(&string)
     }
 
-    #[allow(unused)]
     pub fn symlink_fingerprint_algorithm(&self) -> Result<SymlinkFingerprintAlgorithm> {
         let string = self
             .get(Self::SYMLINK_FINGERPRINT_ALGORITHM)
