@@ -3,6 +3,7 @@ pub mod settings;
 use std::fmt;
 use std::ops;
 use std::path::PathBuf;
+use std::str::FromStr;
 
 use chrono::{DateTime, FixedOffset};
 use lazy_static::lazy_static;
@@ -158,6 +159,80 @@ impl FileTag {
         TagIdValueIdPair {
             tag_id: self.tag_id,
             value_id: self.value_id,
+        }
+    }
+}
+
+#[derive(Debug, PartialEq)]
+pub enum FileFingerprintAlgorithm {
+    None,
+    DynamicSha1,
+    DynamicSha256,
+    DynamicMd5,
+    DynamicBlake2b,
+    RegularSha1,
+    RegularSha256,
+    RegularMd5,
+    RegularBlake2b,
+}
+
+impl FromStr for FileFingerprintAlgorithm {
+    type Err = Error;
+
+    fn from_str(s: &str) -> Result<Self> {
+        match s {
+            "none" => Ok(FileFingerprintAlgorithm::None),
+            "dynamic:MD5" => Ok(FileFingerprintAlgorithm::DynamicMd5),
+            "dynamic:SHA1" => Ok(FileFingerprintAlgorithm::DynamicSha1),
+            "dynamic:SHA256" => Ok(FileFingerprintAlgorithm::DynamicSha256),
+            "dynamic:BLAKE2b" => Ok(FileFingerprintAlgorithm::DynamicBlake2b),
+            "MD5" => Ok(FileFingerprintAlgorithm::RegularMd5),
+            "SHA1" => Ok(FileFingerprintAlgorithm::RegularSha1),
+            "SHA256" => Ok(FileFingerprintAlgorithm::RegularSha256),
+            "BLAKE2b" => Ok(FileFingerprintAlgorithm::RegularBlake2b),
+            _ => Err(format!("unsupported symbolic link fingerprint algorithm '{}'", s).into()),
+        }
+    }
+}
+
+#[derive(Debug, PartialEq)]
+pub enum DirectoryFingerprintAlgorithm {
+    None,
+    DynamicSumSizes,
+    RegularSumSizes,
+}
+
+impl FromStr for DirectoryFingerprintAlgorithm {
+    type Err = Error;
+
+    fn from_str(s: &str) -> Result<Self> {
+        match s {
+            "none" => Ok(DirectoryFingerprintAlgorithm::None),
+            "sumSizes" => Ok(DirectoryFingerprintAlgorithm::RegularSumSizes),
+            "dynamic:sumSizes" => Ok(DirectoryFingerprintAlgorithm::DynamicSumSizes),
+            _ => Err(format!("unsupported directory fingerprint algorithm '{}'", s).into()),
+        }
+    }
+}
+
+#[derive(Debug, PartialEq)]
+pub enum SymlinkFingerprintAlgorithm {
+    None,
+    Follow,
+    TargetName,
+    TargetNameNoExt,
+}
+
+impl FromStr for SymlinkFingerprintAlgorithm {
+    type Err = Error;
+
+    fn from_str(s: &str) -> Result<Self> {
+        match s {
+            "none" => Ok(SymlinkFingerprintAlgorithm::None),
+            "follow" => Ok(SymlinkFingerprintAlgorithm::Follow),
+            "targetName" => Ok(SymlinkFingerprintAlgorithm::TargetName),
+            "targetNameNoExt" => Ok(SymlinkFingerprintAlgorithm::TargetNameNoExt),
+            _ => Err(format!("unsupported symbolic link fingerprint algorithm '{}'", s).into()),
         }
     }
 }

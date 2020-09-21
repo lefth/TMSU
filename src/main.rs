@@ -10,6 +10,7 @@ mod api;
 mod cli;
 mod entities;
 mod errors;
+mod fingerprint;
 mod path;
 mod query;
 mod storage;

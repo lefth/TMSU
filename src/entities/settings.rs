@@ -1,5 +1,8 @@
+use std::str::FromStr;
+
 use error_chain::ensure;
 
+use super::{DirectoryFingerprintAlgorithm, FileFingerprintAlgorithm, SymlinkFingerprintAlgorithm};
 use crate::errors::*;
 
 pub trait Setting {
@@ -157,22 +160,27 @@ impl Settings {
     }
 
     #[allow(unused)]
-    pub fn directory_fingerprint_algorithm(&self) -> String {
-        self.get(Self::DIRECTORY_FINGERPRINT_ALGORITHM)
+    pub fn directory_fingerprint_algorithm(&self) -> Result<DirectoryFingerprintAlgorithm> {
+        let string = self
+            .get(Self::DIRECTORY_FINGERPRINT_ALGORITHM)
             .unwrap()
-            .as_str()
+            .as_str();
+        DirectoryFingerprintAlgorithm::from_str(&string)
     }
 
     #[allow(unused)]
-    pub fn file_fingerprint_algorithm(&self) -> String {
-        self.get(Self::FILE_FINGERPRINT_ALGORITHM).unwrap().as_str()
+    pub fn file_fingerprint_algorithm(&self) -> Result<FileFingerprintAlgorithm> {
+        let string = self.get(Self::FILE_FINGERPRINT_ALGORITHM).unwrap().as_str();
+        FileFingerprintAlgorithm::from_str(&string)
     }
 
     #[allow(unused)]
-    pub fn symlink_fingerprint_algorithm(&self) -> String {
-        self.get(Self::SYMLINK_FINGERPRINT_ALGORITHM)
+    pub fn symlink_fingerprint_algorithm(&self) -> Result<SymlinkFingerprintAlgorithm> {
+        let string = self
+            .get(Self::SYMLINK_FINGERPRINT_ALGORITHM)
             .unwrap()
-            .as_str()
+            .as_str();
+        SymlinkFingerprintAlgorithm::from_str(&string)
     }
 
     #[allow(unused)]
