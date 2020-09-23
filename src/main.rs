@@ -11,6 +11,7 @@ mod cli;
 mod entities;
 mod errors;
 mod path;
+mod query;
 mod storage;
 
 fn main() {
