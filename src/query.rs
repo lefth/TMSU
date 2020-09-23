@@ -2,7 +2,6 @@ mod parser;
 
 use crate::errors::*;
 
-#[allow(unused)] // FIXME: temporary
 #[derive(Debug, PartialEq)]
 pub(crate) enum Expression {
     Tag(TagExpression),
@@ -41,7 +40,6 @@ pub(crate) struct ComparisonExpression {
     pub value: String,
 }
 
-#[allow(unused)] // FIXME: temporary
 #[derive(Debug, PartialEq)]
 pub enum Operator {
     Different,
@@ -52,7 +50,6 @@ pub enum Operator {
     MoreThanOrEqual,
 }
 
-#[allow(unused)] // FIXME: temporary
 impl Expression {
     pub(crate) fn parse(query: &str) -> Result<Option<Self>> {
         // Whitespace only -> None

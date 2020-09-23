@@ -1,6 +1,6 @@
 use crate::entities::{Tag, TagFileCount, TagId};
 use crate::errors::*;
-use crate::storage::{self, Row, Transaction};
+use crate::storage::{self, collation_for, Row, Transaction};
 
 pub fn tag_count(tx: &mut Transaction) -> Result<u64> {
     tx.count_from_table("tag")
@@ -25,19 +25,20 @@ WHERE id = ?";
     tx.query_single_params(sql, params, parse_tag)
 }
 
-pub fn tags_by_names(tx: &mut Transaction, names: &[&str]) -> Result<Vec<Tag>> {
+pub fn tags_by_names(tx: &mut Transaction, names: &[&str], ignore_case: bool) -> Result<Vec<Tag>> {
     if names.is_empty() {
         return Ok(vec![]);
     }
 
+    let collation = collation_for(ignore_case);
     let (placeholders, params) = storage::generate_placeholders(names)?;
 
     let sql = format!(
         "
 SELECT id, name
 FROM tag
-WHERE name IN ({})",
-        &placeholders
+WHERE name {} IN ({})",
+        collation, &placeholders
     );
 
     tx.query_vec_params(&sql, &params, parse_tag)
@@ -47,7 +48,7 @@ pub fn tag_by_name(tx: &mut Transaction, name: &str) -> Result<Option<Tag>> {
     // Note: when the name is an empty string, the Go implementation returns a
     // Tag with an ID of 0. This is probably a leftover from older code and is not useful anymore,
     // since empty tags are disallowed in upper levels, and a None value is perfectly suited.
-    let results = tags_by_names(tx, &[name])?;
+    let results = tags_by_names(tx, &[name], false)?;
     Ok(results.into_iter().next())
 }
 

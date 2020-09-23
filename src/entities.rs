@@ -2,12 +2,14 @@ pub mod settings;
 
 use std::fmt;
 use std::ops;
+use std::path::PathBuf;
 
 use chrono::{DateTime, FixedOffset};
 use lazy_static::lazy_static;
 use regex::Regex;
 
 use crate::errors::*;
+use crate::path::{AbsPath, IntoAbsPath};
 
 // Initialize the regular expression only once, and on demand
 lazy_static! {
@@ -124,10 +126,22 @@ pub struct Tag {
     pub name: String,
 }
 
+impl AsRef<str> for Tag {
+    fn as_ref(&self) -> &str {
+        &self.name
+    }
+}
+
 #[derive(Debug, PartialEq, Eq, Hash)]
 pub struct Value {
     pub id: ValueId,
     pub name: String,
+}
+
+impl AsRef<str> for Value {
+    fn as_ref(&self) -> &str {
+        &self.name
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -158,10 +172,33 @@ pub struct File {
     pub is_dir: bool,
 }
 
+impl File {
+    pub fn to_path_buf(&self) -> PathBuf {
+        if self.dir == "." {
+            PathBuf::from(&self.name)
+        } else {
+            PathBuf::from(&self.dir).join(&self.name)
+        }
+    }
+}
+
+impl IntoAbsPath for File {
+    fn into_abs_path(self, base: &AbsPath) -> AbsPath {
+        self.to_path_buf().into_abs_path(base)
+    }
+}
+
 pub struct TagFileCount {
     pub id: TagId,
     pub name: String,
     pub file_count: u32,
+}
+
+pub enum FileSort {
+    Id,
+    Name,
+    Time,
+    Size,
 }
 
 #[derive(Debug, PartialEq, Eq, Hash)]

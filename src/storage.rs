@@ -203,7 +203,7 @@ fn generate_placeholders<'a>(values: &'a [&str]) -> Result<(String, Vec<&'a dyn 
     Ok((placeholders.join(","), params))
 }
 
-/// Convert an OsStr into a string. Note that this conversion can fail.
+/// Convert a path-like object into a string. Note that this conversion can fail.
 /// TODO: does this really work on Windows? If not, what to do instead?
 fn path_to_sql<'a, P: 'a + AsRef<Path>>(path: P) -> Result<String> {
     Ok(path
@@ -337,5 +337,12 @@ impl<'a> SqlBuilder<'a> {
 
     pub fn params(self) -> impl IntoIterator<Item = BoxedToSql> {
         self.params
+    }
+}
+
+fn collation_for(ignore_case: bool) -> &'static str {
+    match ignore_case {
+        true => " COLLATE NOCASE",
+        false => "",
     }
 }
