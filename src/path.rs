@@ -6,7 +6,7 @@ use std::rc::Rc;
 
 use crate::errors::*;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct AbsPath(PathBuf);
 
 impl AbsPath {

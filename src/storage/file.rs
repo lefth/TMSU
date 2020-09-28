@@ -17,6 +17,19 @@ pub fn file_count(tx: &mut Transaction) -> Result<u64> {
     tx.count_from_table("file")
 }
 
+/// Return the complete set of tracked files
+pub fn files(tx: &mut Transaction, sort_type: FileSort) -> Result<Vec<File>> {
+    let mut builder = SqlBuilder::new();
+    builder.append_sql(
+        "
+SELECT id, directory, name, fingerprint, mod_time, size, is_dir
+FROM file",
+    );
+    build_sort(&mut builder, sort_type);
+
+    tx.query_vec(&builder.sql(), parse_file)
+}
+
 pub fn file_by_path(tx: &mut Transaction, scoped_path: &ScopedPath) -> Result<Option<File>> {
     let sql = "
 SELECT id, directory, name, fingerprint, mod_time, size, is_dir
@@ -27,6 +40,28 @@ WHERE directory = ? AND name = ?";
 
     let params = rusqlite::params![path_to_sql(dir)?, path_to_sql(name)?];
     tx.query_single_params(sql, params, parse_file)
+}
+
+pub fn files_by_directory(tx: &mut Transaction, path: &ScopedPath) -> Result<Vec<File>> {
+    let mut sql = String::from(
+        "
+SELECT id, directory, name, fingerprint, mod_time, size, is_dir
+FROM file
+WHERE directory = ? OR directory LIKE ?",
+    );
+
+    if path.contains_root() {
+        sql += "OR directory = '.' OR directory LIKE './%'";
+    }
+
+    sql += "
+ORDER BY directory || '/' || name";
+
+    let params = rusqlite::params![
+        path_to_sql(path.inner())?,
+        path_to_sql(path.inner().join("%"))?
+    ];
+    tx.query_vec_params(&sql, params, parse_file)
 }
 
 fn parse_file(row: Row) -> Result<File> {

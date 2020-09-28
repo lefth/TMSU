@@ -13,6 +13,7 @@ mod errors;
 mod path;
 mod query;
 mod storage;
+mod tree;
 
 fn main() {
     initialize_logging();
