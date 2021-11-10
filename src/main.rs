@@ -32,6 +32,7 @@ fn main() {
 }
 
 fn initialize_logging(force_verbose: bool) {
+    // If --verbose is passed, set the logger to trace with a minimalistic formatter.
     // If the RUST_LOG environment variable is defined, respect it and use the default formatter.
     // Otherwise fallback onto "warn" level and a minimalistic formatter, to allow outputting
     // warnings on the console.
@@ -46,7 +47,12 @@ fn initialize_logging(force_verbose: bool) {
         builder.format(formatter);
         builder.init();
     } else if env::var("RUST_LOG").is_err() {
-        env_logger::from_env(Env::default().default_filter_or("tmsu=warn"))
+        let default_level = if cfg!(debug_assertions) {
+            "tmsu=debug"
+        } else {
+            "tmsu=warn"
+        };
+        env_logger::from_env(Env::default().default_filter_or(default_level))
             .format(formatter)
             .init();
     } else {
