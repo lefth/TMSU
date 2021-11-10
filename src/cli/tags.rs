@@ -42,7 +42,7 @@ arg_enum! {
 ///
 /// See the imply subcommand for more information on implied tags.
 #[derive(Debug, StructOpt)]
-#[structopt(after_help(EXAMPLES.as_str()))]
+#[structopt(verbatim_doc_comment, after_help(EXAMPLES.as_str()))]
 pub struct TagsOptions {
     /// Lists the number of tags rather than their names
     #[structopt(short("c"), long("count"))]
