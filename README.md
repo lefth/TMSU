@@ -6,11 +6,7 @@ Important
 =========
 
 This branch is an experiment in reimplementing TMSU in the Rust programming language.
-
-  1. I have not committed to switch to Rust yet, this is an evaluation so this
-     experiment may be discontinued at any time without notice.
-  2. This is very much a work-in-progress so please do not use this implementation
-     as your daily driver.
+Functionality has not completely been ported.
 
 Overview
 ========
