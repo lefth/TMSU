@@ -34,10 +34,10 @@ use crate::path::AbsPath;
     global_setting(UnifiedHelpMessage),  // Merge options and flags in the usage output
     global_setting(ColoredHelp),  // Use colors by default
 )]
-struct TmsuOptions {
+pub struct TmsuOptions {
     // Externalize global options to a separate struct for convenience
     #[structopt(flatten)]
-    global_opts: GlobalOptions,
+    pub global_opts: GlobalOptions,
 
     #[structopt(subcommand)]
     cmd: SubCommands,
@@ -52,6 +52,10 @@ pub struct GlobalOptions {
     /// Colorize the output (auto/always/never)
     #[structopt(long, default_value = "auto")]
     color: ColorMode,
+
+    // public because this must be processed very early:
+    #[structopt(long, short)]
+    pub verbose: bool,
 }
 
 arg_enum! {
@@ -82,9 +86,7 @@ enum SubCommands {
 }
 
 /// CLI entry point, dispatching to subcommands
-pub fn run() -> Result<()> {
-    let opt = TmsuOptions::from_args();
-
+pub fn run(opt: TmsuOptions) -> Result<()> {
     match opt.cmd {
         SubCommands::Config(config_opts) => config_opts.execute(&opt.global_opts),
         SubCommands::Copy(copy_opts) => copy_opts.execute(&opt.global_opts),
