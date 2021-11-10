@@ -493,7 +493,7 @@ mod tests {
     {
         match parsinc_func(to_parse) {
             Ok((_, expr)) => assert_eq!(&expr, expected_expr, "\nexpr: [{}]", to_parse),
-            Err(e) => panic!(format!("Parsing failed for [{}]: {:?}", to_parse, &e)),
+            Err(e) => panic!("Parsing failed for [{}]: {:?}", to_parse, &e),
         }
     }
 }
